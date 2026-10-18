@@ -333,12 +333,20 @@ function pill(r, key) {
   else txt = 'nesledováno';
   return `<button class="pill ${cls}" data-st="${r.id}|${key}">${txt}</button>`;
 }
+// Den výplaty: z měsíční pravidelné výplaty, jinak z Nastavení.
+function salaryRec() {
+  const monthly = S.rec.filter(r => r.type === 'in' && r.freq !== 'year');
+  return monthly.find(r => r.cat === 'vyplata') || monthly[0] || null;
+}
+const payDay = () => salaryRec()?.day || S.payDay || null;
+// Rozpočtové období: od poslední výplaty (start) do příští výplaty (date).
 function horizon() {
-  const t = today(); let H = null;
-  for (const r of S.rec) if (r.type === 'in') { const n = nextOcc(r, t); if (n && (!H || n < H)) H = n; }
-  if (H) return {date:H, payday:true};
-  const d = parse(t);
-  return {date:iso(new Date(d.getFullYear(), d.getMonth() + 1, 1)), payday:false};
+  const t = today(), d = parse(t), day = payDay();
+  if (!day) return {date:iso(new Date(d.getFullYear(), d.getMonth() + 1, 1)), start:t.slice(0, 8) + '01', payday:false};
+  const at = (y, m) => iso(new Date(y, m, Math.min(day, dim(y, m))));
+  let start = at(d.getFullYear(), d.getMonth());
+  if (start > t) { const p = new Date(d.getFullYear(), d.getMonth() - 1, 1); start = at(p.getFullYear(), p.getMonth()); }
+  return {date:nextOcc({freq:'month', day}, t), start, payday:true};
 }
 
 /* ---------- vykreslení ---------- */
@@ -356,15 +364,15 @@ function txRow(t) {
 
 function renderPrehled() {
   const t = today(), bal = balance(), H = horizon();
-  const ups = pending(H.date);
+  // Platby splatné i v den výplaty se počítají ještě do tohoto období (výplata může přijít později než platba).
+  const ups = pending(addDays(H.date, 1));
   const outs = ups.filter(u => u.r.type === 'out').reduce((s, u) => s + u.r.amount, 0);
-  const ins = ups.filter(u => u.r.type === 'in').reduce((s, u) => s + u.r.amount, 0);
+  const ins = ups.filter(u => u.r.type === 'in' && u.d < H.date).reduce((s, u) => s + u.r.amount, 0);
   const free = bal - outs + ins;
   const days = Math.max(1, daysBetween(t, H.date));
   const perDay = free / days;
 
-  const ym = t.slice(0, 7);
-  const month = S.tx.filter(x => x.date.slice(0, 7) === ym);
+  const month = S.tx.filter(x => x.date >= H.start && x.date <= t);
   const spent = month.filter(x => x.type === 'out').reduce((s, x) => s + x.amount, 0);
   const earned = month.filter(x => x.type === 'in').reduce((s, x) => s + x.amount, 0);
   const byCat = {};
@@ -389,8 +397,8 @@ function renderPrehled() {
         <div class="mid ${perDay < 0 ? 'neg' : ''}">${money(Math.floor(perDay))}</div>
         <div class="sub">${days === 1 ? 'zbývá 1 den' : days < 5 ? `zbývají ${days} dny` : `zbývá ${days} dní`}</div></div>
     </div>
-    ${S.rec.length ? '' : `<div class="card"><h2>Tip</h2><p class="hint" style="margin:0">Přidej v záložce <b>Pravidelné</b> svou výplatu a stálé platby (nájem, předplatné…). Aplikace je pak sama odečítá a spočítá, kolik ti zbývá do výplaty.</p></div>`}
-    <div class="card"><h2>Tento měsíc</h2>
+    ${H.payday ? '' : `<div class="card"><h2>Tip</h2><p class="hint" style="margin:0">Přidej v záložce <b>Pravidelné</b> svou výplatu jako příjem (nebo nastav den výplaty v <b>Nastavení</b>). Aplikace pak počítá od výplaty do výplaty, ne od prvního v měsíci.</p></div>`}
+    <div class="card"><h2>${H.payday ? `Od výplaty (${shortDate(H.start)})` : 'Tento měsíc'}</h2>
       <div class="grid2" style="margin-bottom:${cats.length ? 8 : 0}px">
         <div><div class="lbl">Utraceno</div><div class="mid">${money(spent)}</div></div>
         <div><div class="lbl">Příjmy</div><div class="mid" style="color:var(--in)">${money(earned)}</div></div>
@@ -464,6 +472,11 @@ function renderPravidelne() {
 
 function renderNastaveni() {
   $('#v-nastaveni').innerHTML = `
+    <div class="card"><h2>Výplata</h2>
+      ${salaryRec() ? `<div class="meta">Den výplaty: <b>${salaryRec().day}.</b> v měsíci (podle pravidelného příjmu „${esc(salaryRec().name)}“). Změníš ho v záložce Pravidelné.</div>`
+        : `<label class="f" style="margin:0"><span>Den výplaty v měsíci</span>
+            <input type="number" inputmode="numeric" min="1" max="31" id="payday" value="${S.payDay || ''}" placeholder="nenastaveno – počítá se do konce měsíce"></label>`}
+      <p class="hint">Přehled počítá od výplaty do výplaty: platby splatné před výplatou (i v ten den) se odečtou z toho, co máš teď.</p></div>
     <div class="card"><h2>Zůstatek</h2>
       <div class="lbl">Aktuálně v aplikaci</div><div class="mid">${money(balance())}</div>
       <button class="btn" data-act="bal">Srovnat s bankou</button></div>
@@ -653,6 +666,13 @@ document.querySelector('main').addEventListener('click', e => {
       S = {v:1, setup:false, startBalance:0, tx:[], rec:[]}; save(); setTab('prehled'); openBal(true);
     }
   }
+});
+
+document.querySelector('main').addEventListener('change', e => {
+  if (e.target.id !== 'payday') return;
+  const v = parseInt(e.target.value, 10);
+  S.payDay = v >= 1 && v <= 31 ? v : null; save();
+  toast(S.payDay ? `Den výplaty: ${S.payDay}.` : 'Den výplaty zrušen');
 });
 
 $('#import-file').addEventListener('change', async e => {
