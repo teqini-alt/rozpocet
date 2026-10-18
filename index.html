@@ -227,6 +227,8 @@ let S = load() || {v:1, setup:false, startBalance:0, tx:[], rec:[]};
 // Pravidelná platba má období: měsíční 'YYYY-MM', roční 'YYYY'.
 // Stav období: zapsaný záznam (tx.period) nebo ruční značka r.marks[key] = 'pre' (zaplaceno mimo aplikaci) | 'skip' (neproběhla).
 function migrate() {
+  // Den založení: výplata z toho dne a dřívější už je v zadaném zůstatku.
+  if (S.setup && !S.setupDate) S.setupDate = [...S.rec.map(r => r.created), ...S.tx.map(t => t.date), today()].filter(Boolean).sort()[0];
   for (const r of S.rec) { r.marks ||= {}; r.created ||= r.last || today(); }
   for (const t of S.tx) if (t.recId && !t.period) {
     const r = S.rec.find(x => x.id === t.recId);
@@ -338,15 +340,25 @@ function salaryRec() {
   const monthly = S.rec.filter(r => r.type === 'in' && r.freq !== 'year');
   return monthly.find(r => r.cat === 'vyplata') || monthly[0] || null;
 }
-const payDay = () => salaryRec()?.day || S.payDay || null;
-// Rozpočtové období: od poslední výplaty (start) do příští výplaty (date).
+// Poslední zapsaná výplata (příjem s kategorií Výplata) – ruční nebo z pravidelné platby.
+const lastSalary = () => S.tx.filter(x => x.type === 'in' && x.cat === 'vyplata' && x.date <= today())
+  .reduce((m, x) => x.date > m ? x.date : m, '');
+const payDay = () => salaryRec()?.day || S.payDay || (lastSalary() ? parse(lastSalary()).getDate() : null);
+// Rozpočtové období: od poslední výplaty (start) do příští očekávané výplaty (date).
+// Příští výplata = první den výplaty víc než 14 dní po té poslední, takže výplata o pár dní dřív/později nic nerozhodí.
+// late: očekávaný den už byl, ale výplata ještě není zapsaná.
 function horizon() {
   const t = today(), d = parse(t), day = payDay();
   if (!day) return {date:iso(new Date(d.getFullYear(), d.getMonth() + 1, 1)), start:t.slice(0, 8) + '01', payday:false};
-  const at = (y, m) => iso(new Date(y, m, Math.min(day, dim(y, m))));
-  let start = at(d.getFullYear(), d.getMonth());
-  if (start > t) { const p = new Date(d.getFullYear(), d.getMonth() - 1, 1); start = at(p.getFullYear(), p.getMonth()); }
-  return {date:nextOcc({freq:'month', day}, t), start, payday:true};
+  const P = {freq:'month', day}, last = lastSalary();
+  const date = last ? nextOcc(P, addDays(last, 14)) : nextOcc(P, S.setupDate || t);
+  let start = last;
+  if (!start) {
+    const at = (y, m) => iso(new Date(y, m, Math.min(day, dim(y, m))));
+    start = at(d.getFullYear(), d.getMonth());
+    if (start > t) { const p = new Date(d.getFullYear(), d.getMonth() - 1, 1); start = at(p.getFullYear(), p.getMonth()); }
+  }
+  return {date, start, payday:true, late:date <= t};
 }
 
 /* ---------- vykreslení ---------- */
@@ -365,9 +377,11 @@ function txRow(t) {
 function renderPrehled() {
   const t = today(), bal = balance(), H = horizon();
   // Platby splatné i v den výplaty se počítají ještě do tohoto období (výplata může přijít později než platba).
-  const ups = pending(addDays(H.date, 1));
+  // Když výplata mešká, počítá se opatrně se všemi platbami až do další řádné výplaty.
+  const until = H.late ? nextOcc({freq:'month', day:payDay()}, t) : H.date;
+  const ups = pending(addDays(until, 1));
   const outs = ups.filter(u => u.r.type === 'out').reduce((s, u) => s + u.r.amount, 0);
-  const ins = ups.filter(u => u.r.type === 'in' && u.d < H.date).reduce((s, u) => s + u.r.amount, 0);
+  const ins = ups.filter(u => u.r.type === 'in' && u.d < until).reduce((s, u) => s + u.r.amount, 0);
   const free = bal - outs + ins;
   const days = Math.max(1, daysBetween(t, H.date));
   const perDay = free / days;
@@ -381,7 +395,7 @@ function renderPrehled() {
   const max = cats.length ? cats[0][1] : 1;
 
   const next = pending(addDays(t, 32)).slice(0, 8);
-  const hLabel = H.payday ? `do výplaty (${shortDate(H.date)})` : 'do konce měsíce';
+  const hLabel = H.late ? 'než přijde výplata' : H.payday ? `do výplaty (${shortDate(H.date)})` : 'do konce měsíce';
 
   $('#v-prehled').innerHTML = `
     <div class="card hero">
@@ -393,11 +407,14 @@ function renderPrehled() {
       <div class="card"><div class="lbl">Volné ${hLabel}</div>
         <div class="mid ${free < 0 ? 'neg' : ''}">${money(free)}</div>
         <div class="sub">${outs ? `po platbách ${money(outs)}` : 'žádné plánované platby'}</div></div>
-      <div class="card"><div class="lbl">Můžeš utratit za den</div>
+      ${H.late ? `<div class="card"><div class="lbl">Výplata</div>
+        <div class="mid" style="color:var(--out)">zatím nepřišla</div>
+        <div class="sub">čekala se ${shortDate(H.date)} Až přijde, zapiš ji tlačítkem + jako příjem.</div></div>`
+      : `<div class="card"><div class="lbl">Můžeš utratit za den</div>
         <div class="mid ${perDay < 0 ? 'neg' : ''}">${money(Math.floor(perDay))}</div>
-        <div class="sub">${days === 1 ? 'zbývá 1 den' : days < 5 ? `zbývají ${days} dny` : `zbývá ${days} dní`}</div></div>
+        <div class="sub">${days === 1 ? 'zbývá 1 den' : days < 5 ? `zbývají ${days} dny` : `zbývá ${days} dní`}</div></div>`}
     </div>
-    ${H.payday ? '' : `<div class="card"><h2>Tip</h2><p class="hint" style="margin:0">Přidej v záložce <b>Pravidelné</b> svou výplatu jako příjem (nebo nastav den výplaty v <b>Nastavení</b>). Aplikace pak počítá od výplaty do výplaty, ne od prvního v měsíci.</p></div>`}
+    ${H.payday ? '' : `<div class="card"><h2>Tip</h2><p class="hint" style="margin:0">Nastav v <b>Nastavení</b> den, kdy ti chodí výplata. Aplikace pak počítá od výplaty do výplaty, ne od prvního v měsíci.</p></div>`}
     <div class="card"><h2>${H.payday ? `Od výplaty (${shortDate(H.start)})` : 'Tento měsíc'}</h2>
       <div class="grid2" style="margin-bottom:${cats.length ? 8 : 0}px">
         <div><div class="lbl">Utraceno</div><div class="mid">${money(spent)}</div></div>
@@ -476,7 +493,7 @@ function renderNastaveni() {
       ${salaryRec() ? `<div class="meta">Den výplaty: <b>${salaryRec().day}.</b> v měsíci (podle pravidelného příjmu „${esc(salaryRec().name)}“). Změníš ho v záložce Pravidelné.</div>`
         : `<label class="f" style="margin:0"><span>Den výplaty v měsíci</span>
             <input type="number" inputmode="numeric" min="1" max="31" id="payday" value="${S.payDay || ''}" placeholder="nenastaveno – počítá se do konce měsíce"></label>`}
-      <p class="hint">Přehled počítá od výplaty do výplaty: platby splatné před výplatou (i v ten den) se odečtou z toho, co máš teď.</p></div>
+      <p class="hint">Výplatu zapisuj tlačítkem + jako <b>Příjem → Výplata</b>. Podle ní aplikace pozná, že začalo nové období, i když přijde o pár dní dřív nebo později. Platby splatné do příští výplaty (i v ten den) se odečtou z toho, co máš teď.</p></div>
     <div class="card"><h2>Zůstatek</h2>
       <div class="lbl">Aktuálně v aplikaci</div><div class="mid">${money(balance())}</div>
       <button class="btn" data-act="bal">Srovnat s bankou</button></div>
@@ -628,6 +645,7 @@ $('#f-bal').addEventListener('submit', e => {
   e.preventDefault();
   const v = parseAmt($('#bal-amt').value);
   if (isNaN(v)) { toast('Zadej částku'); return; }
+  if (!S.setup) S.setupDate = today();
   setBalance(v); S.setup = true; save(); $('#d-bal').close(); render(); toast('Zůstatek nastaven');
 });
 
