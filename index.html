@@ -93,6 +93,9 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .amtin{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--accent);margin-bottom:16px}
 .amtin input{flex:1;min-width:0;border:0;background:none;font-size:34px;font-weight:700;padding:4px 0;outline:none;font-variant-numeric:tabular-nums}
 .amtin span{font-size:22px;color:var(--muted);font-weight:600}
+.quick{display:flex;gap:8px;overflow-x:auto;margin:-4px -16px 14px;padding:0 16px 2px;scrollbar-width:none}
+.quick:empty{display:none}
+.quick button{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:14px;cursor:pointer;white-space:nowrap}
 .cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
 .cats button{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 2px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;min-width:0}
 .cats button span{font-size:22px}
@@ -129,10 +132,11 @@ label.f input,label.f select{width:100%;padding:12px;border-radius:12px;border:1
   <h3><span id="tx-title">Nová útrata</span><button type="button" class="x" data-close>×</button></h3>
   <div class="seg" id="tx-type"><button type="button" data-v="out" class="on">Výdaj</button><button type="button" data-v="in">Příjem</button></div>
   <div class="amtin"><input id="tx-amt" inputmode="decimal" placeholder="0" autocomplete="off"><span>Kč</span></div>
+  <div class="quick" id="tx-quick"></div>
   <div class="cats" id="tx-cats"></div>
   <div class="two">
     <label class="f"><span>Datum</span><input type="date" id="tx-date"></label>
-    <label class="f"><span>Poznámka</span><input id="tx-note" placeholder="nepovinné" autocomplete="off"></label>
+    <label class="f"><span>Poznámka</span><input id="tx-note" placeholder="např. Albert" autocomplete="off" list="tx-notes"></label>
   </div>
   <button class="btn" type="submit">Uložit</button>
   <button class="btn danger" type="button" id="tx-del">Smazat</button>
@@ -164,9 +168,16 @@ label.f input,label.f select{width:100%;padding:12px;border-radius:12px;border:1
   <h3><span id="bal-title">Zůstatek na účtu</span><button type="button" class="x" data-close>×</button></h3>
   <p class="hint" id="bal-hint" style="margin:0 0 14px">Zadej, kolik máš teď na účtu podle bankovnictví. Historie útrat zůstane, jen se srovná výsledný zůstatek.</p>
   <div class="amtin"><input id="bal-amt" inputmode="decimal" placeholder="0" autocomplete="off"><span>Kč</span></div>
+  <div id="bal-diff-wrap" hidden>
+    <p class="hint" id="bal-diff" style="margin:0 0 10px"></p>
+    <label style="display:flex;gap:10px;align-items:center;font-size:14px;margin-bottom:6px">
+      <input type="checkbox" id="bal-log" checked style="width:20px;height:20px;accent-color:var(--accent)">
+      Zapsat rozdíl do historie (doporučeno)</label>
+  </div>
   <button class="btn" type="submit">Uložit</button>
 </form></dialog>
 
+<datalist id="tx-notes"></datalist>
 <input type="file" id="import-file" accept="application/json,.json" hidden>
 <div id="toast"></div>
 
@@ -182,10 +193,12 @@ const CATS = {
     {id:'zabava',icon:'🎉',name:'Zábava'}, {id:'obleceni',icon:'👕',name:'Oblečení'},
     {id:'zdravi',icon:'💊',name:'Zdraví'}, {id:'darky',icon:'🎁',name:'Dárky'},
     {id:'sporeni',icon:'🐷',name:'Spoření'}, {id:'ostatni',icon:'📦',name:'Ostatní'},
+    {id:'nezapsane',icon:'❓',name:'Nezapsané',hidden:true},
   ],
   in: [
     {id:'vyplata',icon:'💰',name:'Výplata'}, {id:'vraceno',icon:'↩️',name:'Vráceno'},
     {id:'dar',icon:'🎁',name:'Dar'}, {id:'prijem',icon:'➕',name:'Jiný příjem'},
+    {id:'nezapsane',icon:'❓',name:'Nezapsané',hidden:true},
   ],
 };
 const MONTHS = ['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec'];
@@ -521,19 +534,35 @@ function setTab(t) {
 }
 
 /* ---------- dialog: útrata ---------- */
-let txEdit = null, txType = 'out', txCat = 'jidlo';
+let txEdit = null, txType = 'out', txCat = 'jidlo', catTouched = false;
 function drawCats() {
-  $('#tx-cats').innerHTML = CATS[txType].map(c =>
+  $('#tx-cats').innerHTML = CATS[txType].filter(c => !c.hidden || c.id === txCat).map(c =>
     `<button type="button" data-cat="${c.id}" class="${c.id === txCat ? 'on' : ''}"><span>${c.icon}</span>${esc(c.name)}</button>`).join('');
+}
+// Známé poznámky (obchody) z ručně zapsaných záznamů: kolikrát, naposledy, s jakou kategorií.
+function knownNotes(type) {
+  const map = new Map();
+  for (const x of [...S.tx].sort((a, b) => a.date < b.date ? -1 : 1)) {
+    if (x.recId || !x.note || x.type !== type || catInfo(type, x.cat).hidden) continue;
+    const k = x.note.toLowerCase(), o = map.get(k) || {count:0};
+    map.set(k, {note:o.note || x.note, cat:x.cat, count:o.count + 1, last:x.date});
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || (a.last < b.last ? 1 : -1));
+}
+function drawQuick() {
+  const list = knownNotes(txType);
+  $('#tx-notes').innerHTML = list.slice(0, 50).map(n => `<option value="${esc(n.note)}">`).join('');
+  $('#tx-quick').innerHTML = txEdit ? '' : list.slice(0, 8).map(n =>
+    `<button type="button" data-note="${esc(n.note)}" data-cat="${n.cat}">${catInfo(txType, n.cat).icon} ${esc(n.note)}</button>`).join('');
 }
 function setTxType(t) {
   txType = t;
   document.querySelectorAll('#tx-type button').forEach(b => b.classList.toggle('on', b.dataset.v === t));
   if (!CATS[t].some(c => c.id === txCat)) txCat = CATS[t][0].id;
-  drawCats();
+  drawCats(); drawQuick();
 }
 function openTx(tx) {
-  txEdit = tx || null;
+  txEdit = tx || null; catTouched = !!tx;
   $('#tx-title').textContent = tx ? 'Upravit záznam' : 'Nová útrata';
   txCat = tx ? tx.cat : 'jidlo';
   setTxType(tx ? tx.type : 'out');
@@ -545,7 +574,18 @@ function openTx(tx) {
   if (!tx) setTimeout(() => $('#tx-amt').focus(), 50);
 }
 $('#tx-type').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.v); });
-$('#tx-cats').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { txCat = b.dataset.cat; drawCats(); } });
+$('#tx-cats').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { txCat = b.dataset.cat; catTouched = true; drawCats(); } });
+$('#tx-quick').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('#tx-note').value = b.dataset.note; txCat = b.dataset.cat; catTouched = true; drawCats();
+  $('#tx-amt').focus();
+});
+// Napíšeš známý obchod → sama se vybere kategorie, kterou jsi u něj použil naposledy.
+$('#tx-note').addEventListener('input', () => {
+  if (catTouched) return;
+  const n = knownNotes(txType).find(n => n.note.toLowerCase() === $('#tx-note').value.trim().toLowerCase());
+  if (n) { txCat = n.cat; drawCats(); }
+});
 $('#f-tx').addEventListener('submit', e => {
   e.preventDefault();
   const amount = parseAmt($('#tx-amt').value);
@@ -564,7 +604,7 @@ $('#tx-del').addEventListener('click', () => {
 let recEdit = null, recType = 'out';
 $('#rec-month').innerHTML = MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
 function fillRecCats(sel) {
-  $('#rec-cat').innerHTML = CATS[recType].map(c => `<option value="${c.id}">${c.icon} ${esc(c.name)}</option>`).join('');
+  $('#rec-cat').innerHTML = CATS[recType].filter(c => !c.hidden).map(c => `<option value="${c.id}">${c.icon} ${esc(c.name)}</option>`).join('');
   $('#rec-cat').value = CATS[recType].some(c => c.id === sel) ? sel : (recType === 'in' ? 'vyplata' : 'bydleni');
 }
 function setRecType(t, sel) {
@@ -636,17 +676,36 @@ function openBal(first) {
   $('#bal-title').textContent = first ? 'Vítej 👋' : 'Zůstatek na účtu';
   $('#bal-hint').textContent = first
     ? 'Na začátek zadej, kolik máš teď na účtu. Pak si přidej pravidelné platby a průběžně zapisuj útraty.'
-    : 'Zadej, kolik máš teď na účtu podle bankovnictví. Historie útrat zůstane, jen se srovná výsledný zůstatek.';
+    : 'Zadej, kolik máš teď na účtu podle bankovnictví.';
   $('#bal-amt').value = S.setup ? String(Math.round(balance() * 100) / 100).replace('.', ',') : '';
+  $('#bal-log').checked = true;
+  updateBalDiff();
   $('#d-bal').showModal();
   setTimeout(() => { $('#bal-amt').focus(); $('#bal-amt').select(); }, 50);
 }
+const balDiff = () => Math.round((parseAmt($('#bal-amt').value) - balance()) * 100) / 100;
+function updateBalDiff() {
+  const d = balDiff();
+  $('#bal-diff-wrap').hidden = !S.setup || !d;
+  if (!d) return;
+  $('#bal-diff').innerHTML = d < 0
+    ? `V bance máš o <b>${money(-d)}</b> méně, než ukazuje aplikace. Nejspíš nějaké útraty chybí – zapíšou se jako „❓ Nezapsané útraty“.`
+    : `V bance máš o <b>${money(d)}</b> víc, než ukazuje aplikace. Rozdíl se zapíše jako „❓ Nezapsaný příjem“.`;
+}
+$('#bal-amt').addEventListener('input', updateBalDiff);
 $('#f-bal').addEventListener('submit', e => {
   e.preventDefault();
   const v = parseAmt($('#bal-amt').value);
   if (isNaN(v)) { toast('Zadej částku'); return; }
-  if (!S.setup) S.setupDate = today();
-  setBalance(v); S.setup = true; save(); $('#d-bal').close(); render(); toast('Zůstatek nastaven');
+  const d = balDiff();
+  if (S.setup && d && $('#bal-log').checked) {
+    S.tx.push({id:uid(), date:today(), amount:Math.abs(d), type:d < 0 ? 'out' : 'in', cat:'nezapsane',
+      note:d < 0 ? 'Nezapsané útraty' : 'Nezapsaný příjem'});
+  } else {
+    if (!S.setup) S.setupDate = today();
+    setBalance(v);
+  }
+  S.setup = true; save(); $('#d-bal').close(); render(); toast('Zůstatek srovnán s bankou');
 });
 
 /* ---------- akce ---------- */
@@ -710,6 +769,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) { ap
 applyRecurring();
 render();
 if (!S.setup) openBal(true);
+else if (new URLSearchParams(location.search).has('pridat')) openTx(); // zkratka „Přidat útratu“ z ikony
+if (location.search) history.replaceState(null, '', location.pathname);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 </script>

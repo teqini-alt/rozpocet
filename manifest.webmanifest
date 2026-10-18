@@ -9,6 +9,14 @@
   "orientation": "portrait",
   "background_color": "#f4f5f2",
   "theme_color": "#0f766e",
+  "shortcuts": [
+    {
+      "name": "Přidat útratu",
+      "short_name": "Útrata",
+      "url": "./?pridat=1",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
