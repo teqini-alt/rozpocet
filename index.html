@@ -72,18 +72,26 @@ main{padding:0 20px 32px;max-width:560px;margin:0 auto}
 @media (prefers-reduced-motion:reduce){.track .past{transition:none}}
 
 .balance{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
-.balance .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.balance .v{font-size:24px;font-weight:600;line-height:1.2}
 .balance .l{font-size:14px;color:var(--ink-2)}
 
 /* ---------- řádky ---------- */
 .row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--rule)}
 .row:last-child{border-bottom:0}
 .row.tap{cursor:pointer}
-.ico{width:40px;height:40px;border-radius:50%;background:var(--violet-soft);display:grid;place-items:center;font-size:19px;flex:none}
+.ico{width:40px;height:40px;border-radius:50%;background:var(--violet-soft);color:var(--violet);display:grid;place-items:center;flex:none}
+/* ikony kategorií: stejný tah jako navigace, barva z okolí */
+.ci{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.quick .ci{width:17px;height:17px;vertical-align:-3px;margin-right:4px;color:var(--violet)}
+.cats button span{color:var(--ink-2)}
+.cats button.on span{color:var(--violet)}
+/* částky v seznamech mluví stejným písmem jako hlavní číslo */
+.amt,.balance .v,.monthnav b,.day span:last-child,.sec>h2 small{font-family:var(--num);font-variant-numeric:lining-nums tabular-nums}
+.sg{font-family:var(--text);font-weight:500;margin-right:1px}
 .grow{flex:1;min-width:0}
 .name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .meta{color:var(--ink-2);font-size:13.5px}
-.amt{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.amt{font-size:17px;font-weight:600;white-space:nowrap}
 .amt.in{color:var(--green)}
 .right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
 .pill{border:0;border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:500;white-space:nowrap;cursor:pointer;
@@ -98,7 +106,7 @@ main{padding:0 20px 32px;max-width:560px;margin:0 auto}
 
 .monthnav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 0}
 .monthnav button{width:44px;height:44px;border-radius:50%;border:1px solid var(--rule);background:none;cursor:pointer;display:grid;place-items:center}
-.monthnav b{display:block;font-size:20px;font-weight:600;text-transform:capitalize;text-align:center}
+.monthnav b{display:block;font-size:30px;font-weight:600;line-height:1.15;letter-spacing:-.01em;text-transform:capitalize;text-align:center;color:var(--violet)}
 .monthnav .muted{display:block;text-align:center;font-size:14px}
 .day{display:flex;justify-content:space-between;color:var(--ink-2);font-size:14px;margin:24px 0 0;padding-bottom:2px;font-variant-numeric:tabular-nums}
 .day:first-letter{text-transform:uppercase}
@@ -260,20 +268,41 @@ dialog{scrollbar-width:thin;scrollbar-color:var(--rule) transparent}
 'use strict';
 const KEY = 'rozpocet.v1';
 
+// Ikony kategorií: vlastní linková kresba ve stejném tahu jako navigace (žádná emoji).
+const I = p => `<svg class="ci" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+const IC = {
+  cart: I('<path d="M3 4h2l2.2 10.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.2"/><circle cx="9.5" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>'),
+  cutlery: I('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.2 1.2-3 3.5-3 6.5V13h3"/>'),
+  car: I('<path d="M4.5 15.5v-3l1.7-4.4a2 2 0 0 1 1.9-1.3h7.8a2 2 0 0 1 1.9 1.3l1.7 4.4v3"/><path d="M3.5 15.5h17M4.5 12h15"/><circle cx="7.5" cy="17.5" r="1.7"/><circle cx="16.5" cy="17.5" r="1.7"/>'),
+  house: I('<path d="M4 11 12 4l8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/>'),
+  bank: I('<path d="M3.5 9 12 4l8.5 5"/><path d="M5 9.5h14M6.5 10v7M10.2 10v7M13.8 10v7M17.5 10v7M5 17h14M4 20h16"/>'),
+  bulb: I('<path d="M9.5 17.5h5M10.5 20.5h3"/><path d="M12 3.5a5.5 5.5 0 0 0-3.3 9.9c.6.5 1 1.2 1 2v.1h4.6v-.1c0-.8.4-1.5 1-2A5.5 5.5 0 0 0 12 3.5z"/>'),
+  screen: I('<rect x="3.5" y="5" width="17" height="11.5" rx="1.5"/><path d="M8.5 20h7M12 16.5V20"/><path d="m10.5 8.5 4 2.3-4 2.2z"/>'),
+  ticket: I('<path d="M4 8.5V7a1.5 1.5 0 0 1 1.5-1.5h13A1.5 1.5 0 0 1 20 7v1.5a2.5 2.5 0 0 0 0 5V15a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 15v-1.5a2.5 2.5 0 0 0 0-5z"/><path d="M14.5 5.5v11" stroke-dasharray="1.6 2"/>'),
+  shirt: I('<path d="M9 4 4 6.5l1.5 4L8 9.5V20h8V9.5l2.5 1 1.5-4L15 4a3 3 0 0 1-6 0z"/>'),
+  cross: I('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>'),
+  gift: I('<rect x="4" y="8.5" width="16" height="4" rx="1"/><path d="M5.5 12.5v7.5h13v-7.5M12 8.5V20"/><path d="M12 8.5C10.5 5 7 5 7 7.3 7 8.5 9 8.5 12 8.5zM12 8.5c1.5-3.5 5-3.5 5-1.2 0 1.2-2 1.2-5 1.2z"/>'),
+  coins: I('<ellipse cx="12" cy="6.5" rx="6.5" ry="2.5"/><path d="M5.5 6.5v4c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-4M5.5 10.5v4c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-4M5.5 14.5v3c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-3"/>'),
+  box: I('<path d="M4 8 12 4l8 4v8l-8 4-8-4z"/><path d="m4 8 8 4 8-4M12 12v8"/>'),
+  ask: I('<circle cx="12" cy="12" r="8"/><path d="M9.8 9.5a2.3 2.3 0 0 1 4.4.9c0 1.6-2.2 2-2.2 3.4M12 16.6v.1"/>'),
+  note: I('<rect x="3" y="6.5" width="18" height="11" rx="1.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/>'),
+  back: I('<path d="M9 6.5 4.5 11 9 15.5"/><path d="M5 11h9a4.5 4.5 0 0 1 0 9h-3"/>'),
+  plus: I('<circle cx="12" cy="12" r="8"/><path d="M12 8.5v7M8.5 12h7"/>'),
+};
 const CATS = {
   out: [
-    {id:'jidlo',icon:'🛒',name:'Nákup'}, {id:'restaurace',icon:'🍽️',name:'Jídlo venku'},
-    {id:'doprava',icon:'🚗',name:'Doprava'}, {id:'bydleni',icon:'🏠',name:'Bydlení'},
-    {id:'uver',icon:'🏦',name:'Úvěr'}, {id:'energie',icon:'💡',name:'Energie'}, {id:'predplatne',icon:'📺',name:'Předplatné'},
-    {id:'zabava',icon:'🎉',name:'Zábava'}, {id:'obleceni',icon:'👕',name:'Oblečení'},
-    {id:'zdravi',icon:'💊',name:'Zdraví'}, {id:'darky',icon:'🎁',name:'Dárky'},
-    {id:'sporeni',icon:'🐷',name:'Spoření'}, {id:'ostatni',icon:'📦',name:'Ostatní'},
-    {id:'nezapsane',icon:'❓',name:'Nezapsané',hidden:true},
+    {id:'jidlo',icon:IC.cart,name:'Nákup'}, {id:'restaurace',icon:IC.cutlery,name:'Jídlo venku'},
+    {id:'doprava',icon:IC.car,name:'Doprava'}, {id:'bydleni',icon:IC.house,name:'Bydlení'},
+    {id:'uver',icon:IC.bank,name:'Úvěr'}, {id:'energie',icon:IC.bulb,name:'Energie'}, {id:'predplatne',icon:IC.screen,name:'Předplatné'},
+    {id:'zabava',icon:IC.ticket,name:'Zábava'}, {id:'obleceni',icon:IC.shirt,name:'Oblečení'},
+    {id:'zdravi',icon:IC.cross,name:'Zdraví'}, {id:'darky',icon:IC.gift,name:'Dárky'},
+    {id:'sporeni',icon:IC.coins,name:'Spoření'}, {id:'ostatni',icon:IC.box,name:'Ostatní'},
+    {id:'nezapsane',icon:IC.ask,name:'Nezapsané',hidden:true},
   ],
   in: [
-    {id:'vyplata',icon:'💰',name:'Výplata'}, {id:'vraceno',icon:'↩️',name:'Vráceno'},
-    {id:'dar',icon:'🎁',name:'Dar'}, {id:'prijem',icon:'➕',name:'Jiný příjem'},
-    {id:'nezapsane',icon:'❓',name:'Nezapsané',hidden:true},
+    {id:'vyplata',icon:IC.note,name:'Výplata'}, {id:'vraceno',icon:IC.back,name:'Vráceno'},
+    {id:'dar',icon:IC.gift,name:'Dar'}, {id:'prijem',icon:IC.plus,name:'Jiný příjem'},
+    {id:'nezapsane',icon:IC.ask,name:'Nezapsané',hidden:true},
   ],
 };
 const MONTHS = ['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec'];
@@ -292,8 +321,10 @@ const today = () => iso(new Date());
 const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
 const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
 const dim = (y, m) => new Date(y, m + 1, 0).getDate();
-const catInfo = (type, id) => CATS[type].find(c => c.id === id) || {id, icon: type === 'in' ? '➕' : '📦', name: 'Ostatní'};
-const shortDate = s => { const d = parse(s); return `${d.getDate()}. ${d.getMonth() + 1}.`; };
+const catInfo = (type, id) => CATS[type].find(c => c.id === id) || {id, icon: type === 'in' ? IC.plus : IC.box, name: 'Ostatní'};
+// Znaménko v Golos: vlasové mínus písma Bodoni je v malé velikosti skoro neviditelné.
+const sign = n => n ? `<span class="sg">${n > 0 ? '+' : '−'}</span>` : '';
+const shortDate =s => { const d = parse(s); return `${d.getDate()}. ${d.getMonth() + 1}.`; };
 function dayLabel(s) {
   const t = today();
   if (s === t) return 'Dnes';
@@ -496,7 +527,7 @@ function txRow(t) {
   const meta = [t.note ? c.name : '', t.recId ? 'pravidelná' : ''].filter(Boolean).join(', ');
   return `<div class="row tap" role="button" tabindex="0" data-tx="${t.id}"><div class="ico" aria-hidden="true">${c.icon}</div>
     <div class="grow"><div class="name">${esc(title)}</div>${meta ? `<div class="meta">${esc(meta)}</div>` : ''}</div>
-    <div class="amt ${t.type}">${t.type === 'in' ? '+' : '−'}${money(t.amount)}</div></div>`;
+    <div class="amt ${t.type}">${sign(t.type === 'in' ? 1 : -1)}${money(t.amount)}</div></div>`;
 }
 
 // Výpočet hlavního čísla – sdílí ho Přehled i hláška po uložení útraty.
@@ -588,7 +619,7 @@ function renderPrehled() {
     <section class="sec"><h2>${H.payday ? `Od výplaty ${shortDate(H.start)}` : 'Tento měsíc'}</h2>
       <p class="hint" style="margin:0 0 4px">Utraceno <b>${money(spent)}</b>${earned ? `, příjmy ${money(earned)}` : ''}</p>
       ${cats.length ? cats.map(([id, v]) => { const c = catInfo('out', id); return `
-        <div class="row"><div class="ico">${c.icon}</div><div class="grow">
+        <div class="row"><div class="ico" aria-hidden="true">${c.icon}</div><div class="grow">
           <div style="display:flex;justify-content:space-between;gap:8px"><span class="name">${esc(c.name)}</span><span class="amt">${money(v)}</span></div>
           <div class="bar"><i style="width:${Math.max(2, v / max * 100)}%"></i></div></div></div>`; }).join('')
         : '<div class="empty">Zatím žádné útraty. Přidáš je tlačítkem +.</div>'}
@@ -616,7 +647,7 @@ function renderHistorie() {
     ${monthNav('m', `${MONTHS[m - 1]} ${y}`, `utraceno ${money(spent)}`)}
     ${groups.length ? groups.map(g => {
       const net = g.items.reduce((s, x) => s + (x.type === 'in' ? x.amount : -x.amount), 0);
-      return `<div class="day"><span>${dayLabel(g.d)}</span><span>${net > 0 ? '+' : net < 0 ? '−' : ''}${money(Math.abs(net))}</span></div>
+      return `<div class="day"><span>${dayLabel(g.d)}</span><span>${sign(net)}${money(Math.abs(net))}</span></div>
         <div>${g.items.map(txRow).join('')}</div>`;
     }).join('') : '<div class="empty">V tomto měsíci nic není. Útratu přidáš tlačítkem +.</div>'}`;
 }
@@ -635,7 +666,7 @@ function recRow(r, key, meta, short, cls = '') {
   const c = catInfo(r.type, r.cat);
   return `<div class="row tap ${cls}" role="button" tabindex="0" aria-haspopup="dialog" data-st="${r.id}|${key}"><div class="ico" aria-hidden="true">${c.icon}</div>
     <div class="grow"><div class="name">${esc(r.name)}</div><div class="meta">${esc(meta)}</div></div>
-    <div class="right"><div class="amt ${r.type}">${r.type === 'in' ? '+' : '−'}${money(r.amount)}</div>${pill(r, key, short)}</div></div>`;
+    <div class="right"><div class="amt ${r.type}">${sign(r.type === 'in' ? 1 : -1)}${money(r.amount)}</div>${pill(r, key, short)}</div></div>`;
 }
 let recMonth = today().slice(0, 7);
 function renderPravidelne() {
@@ -803,7 +834,7 @@ $('#tx-del').addEventListener('click', () => {
 let recEdit = null, recType = 'out';
 $('#rec-month').innerHTML = MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
 function fillRecCats(sel) {
-  $('#rec-cat').innerHTML = CATS[recType].filter(c => !c.hidden).map(c => `<option value="${c.id}">${c.icon} ${esc(c.name)}</option>`).join('');
+  $('#rec-cat').innerHTML = CATS[recType].filter(c => !c.hidden).map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
   $('#rec-cat').value = CATS[recType].some(c => c.id === sel) ? sel : (recType === 'in' ? 'vyplata' : 'bydleni');
 }
 function setRecType(t, sel) {
@@ -891,8 +922,8 @@ function updateBalDiff() {
   $('#bal-diff-wrap').hidden = !S.setup || !d;
   if (!d) return;
   $('#bal-diff').innerHTML = d < 0
-    ? `V bance máš o <b>${money(-d)}</b> méně, než ukazuje aplikace. Nejspíš nějaké útraty chybí – zapíšou se jako „❓ Nezapsané útraty“.`
-    : `V bance máš o <b>${money(d)}</b> víc, než ukazuje aplikace. Rozdíl se zapíše jako „❓ Nezapsaný příjem“.`;
+    ? `V bance máš o <b>${money(-d)}</b> méně, než ukazuje aplikace. Nejspíš nějaké útraty chybí – zapíšou se jako „Nezapsané útraty“.`
+    : `V bance máš o <b>${money(d)}</b> víc, než ukazuje aplikace. Rozdíl se zapíše jako „Nezapsaný příjem“.`;
 }
 $('#bal-amt').addEventListener('input', updateBalDiff);
 $('#f-bal').addEventListener('submit', e => {
