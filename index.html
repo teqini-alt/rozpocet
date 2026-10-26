@@ -30,7 +30,8 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 html,body{margin:0;background:var(--paper);color:var(--ink)}
-body{font:400 16px/1.45 var(--text);min-height:100dvh;padding:0 0 calc(84px + env(safe-area-inset-bottom))}
+/* spodní okraj nechává místo pro lištu i tlačítko +, aby nezakrylo poslední řádek */
+body{font:400 16px/1.45 var(--text);min-height:100dvh;padding:0 0 calc(170px + env(safe-area-inset-bottom))}
 button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--violet);outline-offset:2px;border-radius:6px}
 b{font-weight:600}
@@ -108,7 +109,9 @@ main{padding:0 20px 32px;max-width:560px;margin:0 auto}
 .btn{display:block;width:100%;padding:15px;border-radius:14px;border:0;background:var(--violet);color:var(--on-violet);font-weight:600;font-size:16px;cursor:pointer;margin-top:10px}
 .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)}
 .btn.danger{background:transparent;color:var(--danger);box-shadow:inset 0 0 0 1px var(--rule)}
-.btn.small{display:inline-block;width:auto;padding:8px 14px;font-size:14px;margin:0;border-radius:999px}
+.btn.small{display:inline-block;width:auto;min-height:44px;padding:10px 16px;font-size:14px;margin:0;border-radius:999px}
+.row.later{opacity:.62}
+.row.tap:focus-visible{outline-offset:-2px}
 
 /* ---------- přidat + navigace ---------- */
 #fab{position:fixed;right:20px;bottom:calc(92px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;border:0;
@@ -126,31 +129,53 @@ dialog{border:0;padding:0;margin:auto 0 0;width:100%;max-width:100%;max-height:9
 dialog::backdrop{background:rgba(20,16,30,.5)}
 @media (min-width:600px){dialog{margin:auto;max-width:480px;border-radius:24px}}
 .sheet{padding:10px 20px calc(20px + env(safe-area-inset-bottom))}
-.sheet::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--rule);margin:0 auto 12px}
-.sheet h3{margin:0 0 14px;font-size:19px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
-.x{background:none;border:0;font-size:28px;line-height:1;color:var(--ink-2);cursor:pointer;padding:2px 6px}
-.seg{display:flex;background:var(--paper);border-radius:12px;padding:4px;margin-bottom:16px}
-.seg button{flex:1;padding:9px;border:0;border-radius:9px;background:none;font-weight:500;color:var(--ink-2);cursor:pointer}
+.sheet::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--rule);margin:0 auto 6px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 -10px 10px 0}
+.head h2{margin:0;font-size:19px;font-weight:600}
+.x{width:44px;height:44px;flex:none;display:grid;place-items:center;background:none;border:0;border-radius:50%;color:var(--ink-2);cursor:pointer}
+.x svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.seg{display:flex;background:var(--paper);border-radius:12px;padding:3px;margin-bottom:16px}
+.seg button{flex:1;min-height:44px;padding:8px;border:0;border-radius:9px;background:none;font-weight:500;color:var(--ink-2);cursor:pointer}
 .seg button.on{background:var(--sheet);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .amtin{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--violet);margin-bottom:16px}
 .amtin input{flex:1;min-width:0;border:0;background:none;font:600 46px/1.15 var(--num);padding:2px 0;outline:none;color:var(--violet)}
 .amtin input::placeholder{color:var(--ink-2)}
 .amtin span{font:500 24px var(--num);color:var(--ink-2)}
-.quick{display:flex;gap:8px;overflow-x:auto;margin:-4px -20px 16px;padding:0 20px 2px;scrollbar-width:none}
+.quick{display:flex;gap:8px;overflow-x:auto;margin:-4px -20px 14px;padding:0 20px 2px;scrollbar-width:none}
 .quick:empty{display:none}
-.quick button{flex:none;border:0;box-shadow:inset 0 0 0 1px var(--rule);background:none;border-radius:999px;padding:7px 13px;font-size:14px;cursor:pointer;white-space:nowrap}
-.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px}
-.cats button{border:0;background:none;border-radius:14px;padding:8px 2px;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:0;color:var(--ink-2)}
-.cats button span{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--paper)}
+.quick button{flex:none;min-height:44px;border:0;box-shadow:inset 0 0 0 1px var(--rule);background:none;border-radius:999px;padding:8px 14px;font-size:14px;cursor:pointer;white-space:nowrap}
+.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px}
+.cats.all{grid-template-columns:repeat(4,1fr)}
+.cats button{border:0;background:none;border-radius:14px;padding:6px 0;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:0;color:var(--ink-2);overflow-wrap:anywhere}
+.cats button span{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--paper)}
+.cats button span svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round}
 .cats button.on{color:var(--ink);font-weight:600}
 .cats button.on span{background:var(--violet-soft);box-shadow:inset 0 0 0 2px var(--violet)}
+.extra{display:flex;gap:8px;align-items:stretch}
+.extra .note{flex:1;min-width:0}
+.extra .note input{width:100%;height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--rule);background:var(--paper);font-size:16px}
+.datebtn{flex:none;display:flex;align-items:center;gap:6px;height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--rule);background:var(--paper);cursor:pointer;font-size:15px}
+.datebtn svg{width:18px;height:18px;stroke:var(--ink-2);fill:none;stroke-width:1.8;stroke-linecap:round}
+/* Uložit drží u spodního okraje okna, takže zůstane nad klávesnicí. */
+.savebar{position:sticky;bottom:0;display:flex;gap:10px;margin:16px -20px calc(-20px - env(safe-area-inset-bottom));
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom));background:var(--sheet);border-top:1px solid var(--rule)}
+.savebar .btn{margin:0;flex:2}
+.savebar .btn.danger{flex:1}
+.stack .btn{margin-top:8px}
 label.f{display:block;margin-bottom:12px}
 label.f>span{display:block;font-size:13.5px;color:var(--ink-2);margin-bottom:4px}
 label.f input,label.f select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--rule);background:var(--paper);font-size:16px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-#toast{position:fixed;left:50%;bottom:calc(166px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--paper);
-  padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;max-width:calc(100% - 40px);text-align:center}
-#toast.on{opacity:1}
+#toast{position:fixed;left:20px;right:20px;bottom:calc(166px + env(safe-area-inset-bottom));margin:0 auto;max-width:440px;display:flex;align-items:center;gap:12px;
+  background:var(--ink);color:var(--paper);padding:6px 6px 6px 16px;min-height:48px;border-radius:12px;font-size:14px;
+  opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+#toast span{flex:1;padding:6px 0}
+#toast button{flex:none;min-height:40px;padding:0 14px;border:0;border-radius:9px;background:none;color:var(--violet-soft);font-weight:600;cursor:pointer}
+#toast.on{opacity:1;pointer-events:auto}
+::selection{background:var(--violet-soft);color:var(--ink)}
+input{caret-color:var(--violet)}
+dialog{scrollbar-width:thin;scrollbar-color:var(--rule) transparent}
 </style>
 </head>
 <body>
@@ -172,23 +197,30 @@ label.f input,label.f select{width:100%;padding:12px;border-radius:12px;border:1
 </nav>
 
 <!-- Výdaj / příjem -->
-<dialog id="d-tx"><form class="sheet" method="dialog" id="f-tx" novalidate>
-  <h3><span id="tx-title">Nová útrata</span><button type="button" class="x" data-close>×</button></h3>
-  <div class="seg" id="tx-type"><button type="button" data-v="out" class="on">Výdaj</button><button type="button" data-v="in">Příjem</button></div>
-  <div class="amtin"><input id="tx-amt" inputmode="decimal" placeholder="0" autocomplete="off"><span>Kč</span></div>
-  <div class="quick" id="tx-quick"></div>
-  <div class="cats" id="tx-cats"></div>
-  <div class="two">
-    <label class="f"><span>Datum</span><input type="date" id="tx-date"></label>
-    <label class="f"><span>Poznámka</span><input id="tx-note" placeholder="např. Albert" autocomplete="off" list="tx-notes"></label>
+<dialog id="d-tx" aria-labelledby="tx-title"><form class="sheet" method="dialog" id="f-tx" novalidate>
+  <div class="head"><h2 id="tx-title">Nová útrata</h2><button type="button" class="x" data-close aria-label="Zavřít"></button></div>
+  <div class="seg" id="tx-type" role="group" aria-label="Druh záznamu"><button type="button" data-v="out" class="on" aria-pressed="true">Výdaj</button><button type="button" data-v="in" aria-pressed="false">Příjem</button></div>
+  <label class="amtin"><span class="sr">Částka v korunách</span><input id="tx-amt" inputmode="decimal" enterkeyhint="done" placeholder="0" autocomplete="off"><span aria-hidden="true">Kč</span></label>
+  <div class="quick" id="tx-quick" role="group" aria-label="Časté obchody"></div>
+  <div class="cats" id="tx-cats" role="group" aria-label="Kategorie"></div>
+  <div class="extra">
+    <label class="note"><span class="sr">Poznámka</span><input id="tx-note" placeholder="Poznámka, např. Albert" autocomplete="off" list="tx-notes" enterkeyhint="done"></label>
+    <button type="button" class="datebtn" id="tx-datebtn" aria-label="Změnit datum"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span id="tx-datetxt">dnes</span></button>
+    <input type="date" id="tx-date" class="sr" tabindex="-1" aria-hidden="true">
   </div>
-  <button class="btn" type="submit">Uložit</button>
-  <button class="btn danger" type="button" id="tx-del">Smazat</button>
+  <div class="savebar"><button class="btn danger" type="button" id="tx-del">Smazat</button><button class="btn" type="submit" id="tx-save">Uložit</button></div>
 </form></dialog>
 
+<!-- Stav pravidelné platby -->
+<dialog id="d-st" aria-labelledby="st-title"><div class="sheet">
+  <div class="head"><h2 id="st-title"></h2><button type="button" class="x" data-close aria-label="Zavřít"></button></div>
+  <p class="hint" id="st-info" style="margin:0 0 8px"></p>
+  <div id="st-actions" class="stack"></div>
+</div></dialog>
+
 <!-- Pravidelná platba -->
-<dialog id="d-rec"><form class="sheet" method="dialog" id="f-rec" novalidate>
-  <h3><span id="rec-title">Pravidelná platba</span><button type="button" class="x" data-close>×</button></h3>
+<dialog id="d-rec" aria-labelledby="rec-title"><form class="sheet" method="dialog" id="f-rec" novalidate>
+  <div class="head"><h2 id="rec-title">Pravidelná platba</h2><button type="button" class="x" data-close aria-label="Zavřít"></button></div>
   <div class="seg" id="rec-type"><button type="button" data-v="out" class="on">Platba</button><button type="button" data-v="in">Příjem (výplata…)</button></div>
   <label class="f"><span>Název</span><input id="rec-name" placeholder="např. Nájem, Netflix, Výplata" autocomplete="off"></label>
   <label class="f"><span>Částka (Kč)</span><input id="rec-amt" inputmode="decimal" placeholder="0" autocomplete="off"></label>
@@ -203,27 +235,26 @@ label.f input,label.f select{width:100%;padding:12px;border-radius:12px;border:1
     <div class="seg" id="rec-now" style="margin-bottom:0"><button type="button" data-v="no">Ještě ne</button><button type="button" data-v="yes" id="rec-now-yes">Už zaplaceno</button></div>
   </div>
   <p class="hint" id="rec-next"></p>
-  <button class="btn" type="submit">Uložit</button>
-  <button class="btn danger" type="button" id="rec-del">Smazat</button>
+  <div class="savebar"><button class="btn danger" type="button" id="rec-del">Smazat</button><button class="btn" type="submit">Uložit</button></div>
 </form></dialog>
 
 <!-- Zůstatek -->
-<dialog id="d-bal"><form class="sheet" method="dialog" id="f-bal" novalidate>
-  <h3><span id="bal-title">Zůstatek na účtu</span><button type="button" class="x" data-close>×</button></h3>
-  <p class="hint" id="bal-hint" style="margin:0 0 14px">Zadej, kolik máš teď na účtu podle bankovnictví. Historie útrat zůstane, jen se srovná výsledný zůstatek.</p>
-  <div class="amtin"><input id="bal-amt" inputmode="decimal" placeholder="0" autocomplete="off"><span>Kč</span></div>
+<dialog id="d-bal" aria-labelledby="bal-title"><form class="sheet" method="dialog" id="f-bal" novalidate>
+  <div class="head"><h2 id="bal-title">Zůstatek na účtu</h2><button type="button" class="x" data-close aria-label="Zavřít"></button></div>
+  <p class="hint" id="bal-hint" style="margin:0 0 14px">Zadej, kolik máš teď na účtu podle bankovnictví.</p>
+  <label class="amtin"><span class="sr">Zůstatek v korunách</span><input id="bal-amt" inputmode="decimal" enterkeyhint="done" placeholder="0" autocomplete="off"><span aria-hidden="true">Kč</span></label>
   <div id="bal-diff-wrap" hidden>
     <p class="hint" id="bal-diff" style="margin:0 0 10px"></p>
     <label style="display:flex;gap:10px;align-items:center;font-size:14px;margin-bottom:6px">
       <input type="checkbox" id="bal-log" checked style="width:20px;height:20px;accent-color:var(--violet)">
       Zapsat rozdíl do historie (doporučeno)</label>
   </div>
-  <button class="btn" type="submit">Uložit</button>
+  <div class="savebar"><button class="btn" type="submit" id="bal-save">Uložit</button></div>
 </form></dialog>
 
 <datalist id="tx-notes"></datalist>
 <input type="file" id="import-file" accept="application/json,.json" hidden>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 'use strict';
@@ -274,7 +305,17 @@ function dayLabel(s) {
   return d.toLocaleDateString('cs-CZ', o);
 }
 let toastT;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400); }
+// Hláška dole; s `undo` (snímek dat před změnou) nabídne „Vrátit“.
+function toast(msg, undo) {
+  const t = $('#toast');
+  t.innerHTML = `<span>${esc(msg)}</span>` + (undo ? '<button type="button">Vrátit</button>' : '');
+  if (undo) t.querySelector('button').onclick = () => {
+    S = JSON.parse(undo); save(); render(); toast('Vráceno');
+  };
+  t.classList.add('on'); clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('on'), undo ? 6000 : 2400);
+}
+const snap = () => JSON.stringify(S);
 
 /* ---------- data ---------- */
 function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } }
@@ -363,35 +404,62 @@ function pending(to) {
   return list.sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
 }
 
-function toggleStatus(id, key) {
-  const r = S.rec.find(x => x.id === id); if (!r) return;
-  const st = status(r, key), inc = r.type === 'in';
-  if (st.s === 'paid') {
-    if (!confirm(`${r.name}: označit jako ${inc ? 'nepřišlo' : 'neproběhlou'}? Záznam ${money(st.tx.amount)} se smaže z historie.`)) return;
-    S.tx = S.tx.filter(t => t !== st.tx); r.marks[key] = 'skip';
-    toast(`${r.name}: ${inc ? 'nepřišlo' : 'neproběhla'}`);
-  } else if (st.s === 'pre') {
-    if (!confirm(`${r.name}: zrušit označení „${inc ? 'přišlo' : 'zaplaceno'}“?`)) return;
-    delete r.marks[key];
-  } else {
+// Změna stavu jedné pravidelné platby za období. Vždy jde vrátit z hlášky.
+function setStatus(r, key, action) {
+  const before = snap(), st = status(r, key), inc = r.type === 'in';
+  if (action === 'pay') {
     const t = today(), date = key < periodKey(r, t) ? dueDate(r, key) : t;
     S.tx.push({id:uid(), date, amount:r.amount, type:r.type, cat:r.cat, note:r.name, recId:r.id, period:key});
     delete r.marks[key];
-    toast(`${r.name}: ${inc ? 'přišlo' : 'zaplaceno'} ${money(r.amount)}`);
+  } else if (action === 'skip') {
+    if (st.tx) S.tx = S.tx.filter(t => t !== st.tx);
+    r.marks[key] = 'skip';
+  } else if (action === 'reset') {
+    delete r.marks[key];
   }
   save(); render();
+  const done = {pay:inc ? 'přišlo' : 'zaplaceno', skip:inc ? 'nepřišlo' : 'neproběhla', reset:'bez označení'}[action];
+  toast(`${r.name}: ${done}${action === 'pay' ? `, ${money(r.amount)}` : ''}`, before);
 }
-function pill(r, key) {
+function stText(r, st, short) {
+  const inc = r.type === 'in';
+  if (st.s === 'paid') return `${inc ? 'Přišlo' : 'Zaplaceno'} ${shortDate(st.tx.date)}`;
+  if (st.s === 'pre') return inc ? 'Přišlo' : 'Zaplaceno';
+  if (st.s === 'skip') return inc ? 'Nepřišlo' : 'Neproběhla';
+  if (st.s === 'wait') return short ? 'Čeká' : `Splatné ${shortDate(st.d)}`;
+  if (st.s === 'due') return inc ? 'Zatím nepřišlo' : 'Nezaplaceno';
+  return 'Nesledováno';
+}
+function pill(r, key, short) {
+  const st = status(r, key);
+  const mark = {paid:'✓ ', pre:'✓ ', skip:'✕ ', due:'! '}[st.s] || '';
+  return `<span class="pill ${st.s === 'pre' ? 'paid' : st.s}">${mark}${stText(r, st, short)}</span>`;
+}
+// Nabídka stavů místo okamžitého zápisu: omyl palcem nic nezaplatí.
+let stCur = null;
+function openState(id, key) {
+  const r = S.rec.find(x => x.id === id); if (!r) return;
+  stCur = {r, key};
   const st = status(r, key), inc = r.type === 'in';
-  let cls = st.s, txt;
-  if (st.s === 'paid') txt = `✓ ${inc ? 'Přišlo' : 'Zaplaceno'} ${shortDate(st.tx.date)}`;
-  else if (st.s === 'pre') { cls = 'paid'; txt = `✓ ${inc ? 'Přišlo' : 'Zaplaceno'}`; }
-  else if (st.s === 'skip') txt = inc ? '✕ Nepřišlo' : '✕ Neproběhla';
-  else if (st.s === 'wait') txt = `Splatné ${shortDate(st.d)}`;
-  else if (st.s === 'due') txt = inc ? '! Zatím nepřišlo' : '! Nezaplaceno';
-  else txt = 'nesledováno';
-  return `<button class="pill ${cls}" data-st="${r.id}|${key}">${txt}</button>`;
+  const when = r.freq === 'year' ? `rok ${key}` : `${MONTHS[+key.slice(5, 7) - 1]} ${key.slice(0, 4)}`;
+  $('#st-title').textContent = r.name;
+  const stLine = stText(r, st).toLowerCase();
+  $('#st-info').textContent = `${inc ? '+' : '−'}${money(r.amount)}, ${when}: ${stLine}${stLine.endsWith('.') ? '' : '.'}`;
+  const b = (act, label, cls = 'ghost') => `<button type="button" class="btn ${cls}" data-sa="${act}">${label}</button>`;
+  let html = '';
+  if (st.s !== 'paid' && st.s !== 'pre') html += b('pay', inc ? 'Přišlo' : 'Zaplaceno', '');
+  if (st.s === 'paid') html += b('skip', inc ? 'Nepřišlo, smazat záznam' : 'Neproběhla, smazat záznam');
+  if (st.s === 'pre') html += b('reset', 'Zrušit označení');
+  if (st.s === 'wait' || st.s === 'due') html += b('skip', inc ? 'Tentokrát nepřijde' : 'Tentokrát se neplatí');
+  html += b('edit', 'Upravit pravidelnou platbu');
+  $('#st-actions').innerHTML = html;
+  $('#d-st').showModal();
 }
+$('#st-actions').addEventListener('click', e => {
+  const a = e.target.closest('[data-sa]')?.dataset.sa; if (!a || !stCur) return;
+  $('#d-st').close();
+  if (a === 'edit') openRec(stCur.r); else setStatus(stCur.r, stCur.key, a);
+});
 // Den výplaty: z měsíční pravidelné výplaty, jinak z Nastavení.
 function salaryRec() {
   const monthly = S.rec.filter(r => r.type === 'in' && r.freq !== 'year');
@@ -426,12 +494,13 @@ function txRow(t) {
   const c = catInfo(t.type, t.cat);
   const title = t.note || c.name;
   const meta = [t.note ? c.name : '', t.recId ? 'pravidelná' : ''].filter(Boolean).join(', ');
-  return `<div class="row tap" data-tx="${t.id}"><div class="ico">${c.icon}</div>
+  return `<div class="row tap" role="button" tabindex="0" data-tx="${t.id}"><div class="ico" aria-hidden="true">${c.icon}</div>
     <div class="grow"><div class="name">${esc(title)}</div>${meta ? `<div class="meta">${esc(meta)}</div>` : ''}</div>
     <div class="amt ${t.type}">${t.type === 'in' ? '+' : '−'}${money(t.amount)}</div></div>`;
 }
 
-function renderPrehled() {
+// Výpočet hlavního čísla – sdílí ho Přehled i hláška po uložení útraty.
+function budget() {
   const t = today(), bal = balance(), H = horizon();
   // Platby splatné i v den výplaty se počítají ještě do tohoto období (výplata může přijít později než platba).
   // Když výplata mešká, počítá se opatrně se všemi platbami až do další řádné výplaty.
@@ -440,8 +509,19 @@ function renderPrehled() {
   const outs = ups.filter(u => u.r.type === 'out').reduce((s, u) => s + u.r.amount, 0);
   const ins = ups.filter(u => u.r.type === 'in' && u.d < until).reduce((s, u) => s + u.r.amount, 0);
   const free = bal - outs + ins;
-  const days = Math.max(1, daysBetween(t, H.date));
-  const perDay = free / days;
+  const days = Math.max(1, daysBetween(t, until));
+  return {t, bal, H, until, ups, outs, free, days, perDay:free / days};
+}
+// Jedna věta o tom, co znamená právě uložená útrata.
+function afterLine() {
+  const b = budget();
+  if (b.free < 0) return `Do výplaty chybí ${money(-b.free)}.`;
+  if (b.H.late) return `Do další výplaty zbývá ${money(b.free)}.`;
+  return `Na den teď vychází ${money(Math.floor(b.perDay))}.`;
+}
+
+function renderPrehled() {
+  const {t, bal, H, until, ups, outs, free, days, perDay} = budget();
 
   const month = S.tx.filter(x => x.date >= H.start && x.date <= t);
   const spent = month.filter(x => x.type === 'out').reduce((s, x) => s + x.amount, 0);
@@ -451,23 +531,30 @@ function renderPrehled() {
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
   const max = cats.length ? cats[0][1] : 1;
 
-  const next = pending(addDays(t, 32)).slice(0, 8);
+  // Seznam pravidelných: co je v čísle odečtené (do výplaty včetně) a co přijde až po ní.
+  const next = pending(addDays(t, 32));
+  const counted = next.filter(u => u.d <= until), later = next.filter(u => u.d > until).slice(0, 4);
   const daysTxt = days === 1 ? 'zbývá 1 den' : days < 5 ? `zbývají ${days} dny` : `zbývá ${days} dní`;
   const whole = n => new Intl.NumberFormat('cs-CZ', {maximumFractionDigits:0}).format(Math.floor(n));
+  const to = H.payday ? `do výplaty ${shortDate(until)}` : 'do konce měsíce';
+  const paysTxt = outs ? ` Platby za ${money(outs)} jsou už odečtené.` : '';
 
-  // Hlavní věta pod číslem – co číslo znamená a z čeho vzniklo.
-  let ask, figure, say;
-  if (H.late) {
-    ask = `Výplata zatím nepřišla, čekala se ${shortDate(H.date)}`;
+  // Číslo je vždy kladné a nad ním stojí, co znamená. Záporná „útrata na den“ nedává smysl.
+  let ask, figure, say, warn = false;
+  if (free < 0) {
+    warn = true; figure = -free;
+    ask = H.late ? 'Bez výplaty ti chybí' : H.payday ? 'Do výplaty ti chybí' : 'Do konce měsíce ti chybí';
+    say = H.late
+      ? `Výplata zatím nepřišla (čekala se ${shortDate(H.date)}) a na platby ${to} (${money(outs)}) bez ní nemáš. Až přijde, zapiš ji tlačítkem +.`
+      : `Na platby ${to} (${money(outs)}) nemáš dost peněz. Dnes nic neutrácej, nebo srovnej zůstatek s bankou.`;
+  } else if (H.late) {
     figure = free;
-    say = `Tolik ti zbývá, když odečteš platby do další výplaty${outs ? ` (${money(outs)})` : ''}. Až výplata přijde, zapiš ji tlačítkem + jako příjem.`;
+    ask = 'Celkem do další výplaty';
+    say = `Výplata zatím nepřišla (čekala se ${shortDate(H.date)}), takže peníze musí vydržet až ${to}${paysTxt} Až přijde, zapiš ji tlačítkem +.`;
   } else {
-    ask = 'Dnes můžeš utratit';
     figure = perDay;
-    const to = H.payday ? `do výplaty ${shortDate(H.date)}` : 'do konce měsíce';
-    say = free < 0
-      ? `Po zaplacení plateb ${to} ti bude chybět <b>${money(-free)}</b>.`
-      : `Volných máš <b>${money(free)}</b> ${to}, ${daysTxt}.${outs ? ` Platby za ${money(outs)} jsou už odečtené.` : ''}`;
+    ask = 'Dnes můžeš utratit';
+    say = `Volných máš <b>${money(free)}</b> ${to}, ${daysTxt}.${paysTxt}`;
   }
 
   // Osa období: od začátku (výplata / 1.) do konce, dnešek a nevyřízené pravidelné.
@@ -480,7 +567,7 @@ function renderPrehled() {
     <section class="hero">
       ${guilloche()}
       <p class="ask">${ask}</p>
-      <div class="figure ${figure < 0 ? 'neg' : ''}"><span class="n">${figure < 0 ? '−' : ''}${whole(Math.abs(figure))}</span><span class="c">Kč</span></div>
+      <div class="figure ${warn ? 'neg' : ''}"><span class="n">${whole(figure)}</span><span class="c">Kč</span></div>
       <p class="say">${say}</p>
       <div class="axis" aria-hidden="true">
         <div class="track"><i class="past" style="width:0" data-w="${pos(t)}%"></i>${ticks}<i class="now" style="left:${pos(t)}%"></i></div>
@@ -492,10 +579,12 @@ function renderPrehled() {
       <button class="btn ghost small" data-act="bal">Srovnat s bankou</button>
     </div>
     ${H.payday ? '' : `<p class="hint">Nastav v Nastavení den, kdy ti chodí výplata. Aplikace pak počítá od výplaty do výplaty, ne od prvního v měsíci.</p>`}
-    <section class="sec"><h2>Nevyřízené pravidelné</h2>
-      ${next.length ? next.map(({d, r, key}) => recRow(r, key, dayLabel(d))).join('')
-        : `<div class="empty">${S.rec.length ? 'Na příští měsíc je všechno vyřízené.' : 'Zatím žádné. Přidej je v záložce Pravidelné.'}</div>`}
+    <section class="sec"><h2>Platby ${to}</h2>
+      ${counted.length ? `<p class="hint" style="margin:0 0 4px">Už jsou odečtené z čísla nahoře.</p>` + counted.map(({d, r, key}) => recRow(r, key, dayLabel(d), true)).join('')
+        : `<div class="empty">${S.rec.length ? `${to[0].toUpperCase() + to.slice(1)} už žádné platby nezbývají.` : 'Zatím žádné. Přidej je v záložce Pravidelné.'}</div>`}
     </section>
+    ${later.length ? `<section class="sec"><h2>${H.payday ? 'Po výplatě' : 'Příští měsíc'}</h2>
+      ${later.map(({d, r, key}) => recRow(r, key, dayLabel(d), true, 'later')).join('')}</section>` : ''}
     <section class="sec"><h2>${H.payday ? `Od výplaty ${shortDate(H.start)}` : 'Tento měsíc'}</h2>
       <p class="hint" style="margin:0 0 4px">Utraceno <b>${money(spent)}</b>${earned ? `, příjmy ${money(earned)}` : ''}</p>
       ${cats.length ? cats.map(([id, v]) => { const c = catInfo('out', id); return `
@@ -541,11 +630,12 @@ function monthNav(p, title, sub) {
 function recDesc(r) {
   return r.freq === 'year' ? `každý rok ${r.day}. ${MONTHS[r.month - 1].slice(0, 3)}.` : `každý měsíc ${r.day}.`;
 }
-function recRow(r, key, meta) {
+// Celý řádek otevírá nabídku stavů (velká dotyková plocha, žádný zápis jedním klepnutím).
+function recRow(r, key, meta, short, cls = '') {
   const c = catInfo(r.type, r.cat);
-  return `<div class="row tap" data-rec="${r.id}"><div class="ico">${c.icon}</div>
+  return `<div class="row tap ${cls}" role="button" tabindex="0" aria-haspopup="dialog" data-st="${r.id}|${key}"><div class="ico" aria-hidden="true">${c.icon}</div>
     <div class="grow"><div class="name">${esc(r.name)}</div><div class="meta">${esc(meta)}</div></div>
-    <div class="right"><div class="amt ${r.type}">${r.type === 'in' ? '+' : '−'}${money(r.amount)}</div>${pill(r, key)}</div></div>`;
+    <div class="right"><div class="amt ${r.type}">${r.type === 'in' ? '+' : '−'}${money(r.amount)}</div>${pill(r, key, short)}</div></div>`;
 }
 let recMonth = today().slice(0, 7);
 function renderPravidelne() {
@@ -565,11 +655,13 @@ function renderPravidelne() {
     ${S.rec.length ? `
     <div class="meter" aria-hidden="true">${tracked.map((_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join('')}</div>
     <p class="hint" style="margin-top:8px">Vyřízeno <b>${done} z ${tracked.length}</b>${left ? `, zbývá zaplatit <b>${money(left)}</b>` : ', všechno zaplaceno'}.</p>
+    <button class="btn ghost" data-act="newrec" style="margin-top:16px">Přidat pravidelnou platbu</button>
     ${section('Příjmy', items.filter(r => r.type === 'in'), keyFor, recDesc)}
     ${section('Platby', items.filter(r => r.type === 'out'), keyFor, recDesc)}
     ${section(`Roční platby, stav za rok ${y}`, yearly, keyFor, recDesc)}
-    <p class="hint">V den splatnosti se platba sama zapíše jako zaplacená. Klepnutím na stav ho změníš, třeba když platba neproběhla nebo jsi zaplatil dřív.</p>`
-    : '<div class="empty">Zatím žádné pravidelné platby. Přidej nájem, předplatné nebo splátku tlačítkem +.</div>'}`;
+    <p class="hint">V den splatnosti se platba sama zapíše jako zaplacená. Klepnutím na platbu změníš její stav, třeba když neproběhla nebo jsi zaplatil dřív.</p>`
+    : `<div class="empty">Zatím žádné pravidelné platby. Přidej nájem, předplatné nebo splátku, aplikace je pak bude odečítat sama.</div>
+       <button class="btn" data-act="newrec">Přidat pravidelnou platbu</button>`}`;
 }
 
 function renderNastaveni() {
@@ -605,10 +697,32 @@ function setTab(t) {
 }
 
 /* ---------- dialog: útrata ---------- */
-let txEdit = null, txType = 'out', txCat = 'jidlo', catTouched = false;
+let txEdit = null, txType = 'out', txCat = 'jidlo', catTouched = false, catsOpen = false;
+// Čtyři nejpoužívanější kategorie (vybraná je mezi nimi vždy), zbytek až po klepnutí na „Další“.
+function topCats(type) {
+  const count = {};
+  for (const x of S.tx) if (x.type === type && !x.recId) count[x.cat] = (count[x.cat] || 0) + 1;
+  const list = CATS[type].filter(c => !c.hidden);
+  const top = [...list].sort((a, b) => (count[b.id] || 0) - (count[a.id] || 0) || list.indexOf(a) - list.indexOf(b)).slice(0, 4);
+  if (!top.some(c => c.id === txCat)) top[top.length - 1] = catInfo(type, txCat);
+  return top;
+}
 function drawCats() {
-  $('#tx-cats').innerHTML = CATS[txType].filter(c => !c.hidden || c.id === txCat).map(c =>
-    `<button type="button" data-cat="${c.id}" class="${c.id === txCat ? 'on' : ''}"><span>${c.icon}</span>${esc(c.name)}</button>`).join('');
+  const btn = c => `<button type="button" data-cat="${c.id}" class="${c.id === txCat ? 'on' : ''}" aria-pressed="${c.id === txCat}"><span aria-hidden="true">${c.icon}</span>${esc(c.name)}</button>`;
+  const all = catsOpen || CATS[txType].filter(c => !c.hidden).length <= 5;
+  $('#tx-cats').classList.toggle('all', all);
+  $('#tx-cats').innerHTML = all
+    ? CATS[txType].filter(c => !c.hidden || c.id === txCat).map(btn).join('')
+    : topCats(txType).map(btn).join('') +
+      `<button type="button" data-more aria-expanded="false"><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg></span>Další</button>`;
+}
+function updateSave() {
+  const a = parseAmt($('#tx-amt').value);
+  $('#tx-save').textContent = a > 0 ? `Uložit ${txType === 'in' ? '+' : '−'}${money(a)}` : 'Uložit';
+}
+function updateDate() {
+  const d = $('#tx-date').value || today();
+  $('#tx-datetxt').textContent = d === today() ? 'dnes' : d === addDays(today(), -1) ? 'včera' : shortDate(d);
 }
 // Známé poznámky (obchody) z ručně zapsaných záznamů: kolikrát, naposledy, s jakou kategorií.
 function knownNotes(type) {
@@ -628,24 +742,33 @@ function drawQuick() {
 }
 function setTxType(t) {
   txType = t;
-  document.querySelectorAll('#tx-type button').forEach(b => b.classList.toggle('on', b.dataset.v === t));
+  document.querySelectorAll('#tx-type button').forEach(b => { b.classList.toggle('on', b.dataset.v === t); b.setAttribute('aria-pressed', b.dataset.v === t); });
   if (!CATS[t].some(c => c.id === txCat)) txCat = CATS[t][0].id;
-  drawCats(); drawQuick();
+  drawCats(); drawQuick(); updateSave();
 }
 function openTx(tx) {
-  txEdit = tx || null; catTouched = !!tx;
+  txEdit = tx || null; catTouched = !!tx; catsOpen = false;
   $('#tx-title').textContent = tx ? 'Upravit záznam' : 'Nová útrata';
-  txCat = tx ? tx.cat : 'jidlo';
+  // Bez historie začíná Nákup; jinak nejčastější kategorie.
+  txCat = tx ? tx.cat : (topCats('out')[0]?.id || 'jidlo');
   setTxType(tx ? tx.type : 'out');
   $('#tx-amt').value = tx ? String(tx.amount).replace('.', ',') : '';
   $('#tx-date').value = tx ? tx.date : today();
   $('#tx-note').value = tx ? tx.note || '' : '';
   $('#tx-del').hidden = !tx;
+  updateSave(); updateDate();
   $('#d-tx').showModal();
   if (!tx) setTimeout(() => $('#tx-amt').focus(), 50);
 }
 $('#tx-type').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTxType(b.dataset.v); });
-$('#tx-cats').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { txCat = b.dataset.cat; catTouched = true; drawCats(); } });
+$('#tx-cats').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.hasAttribute('data-more')) { catsOpen = true; drawCats(); $('#tx-cats button').focus(); return; }
+  txCat = b.dataset.cat; catTouched = true; drawCats();
+});
+$('#tx-amt').addEventListener('input', updateSave);
+$('#tx-datebtn').addEventListener('click', () => { const i = $('#tx-date'); try { i.showPicker(); } catch { i.focus(); i.click(); } });
+$('#tx-date').addEventListener('change', updateDate);
 $('#tx-quick').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   $('#tx-note').value = b.dataset.note; txCat = b.dataset.cat; catTouched = true; drawCats();
@@ -662,13 +785,18 @@ $('#f-tx').addEventListener('submit', e => {
   const amount = parseAmt($('#tx-amt').value);
   if (!(amount > 0)) { toast('Zadej částku'); $('#tx-amt').focus(); return; }
   const data = {amount, type:txType, cat:txCat, date:$('#tx-date').value || today(), note:$('#tx-note').value.trim()};
+  const before = snap();
   if (txEdit) Object.assign(txEdit, data); else S.tx.push({id:uid(), ...data});
   save(); $('#d-tx').close(); render();
-  toast(txEdit ? 'Uloženo' : `Přidáno: ${txType === 'in' ? '+' : '−'}${money(amount)}`);
+  const what = `${txType === 'in' ? '+' : '−'}${money(amount)} ${data.note || catInfo(txType, txCat).name}`;
+  toast(`${txEdit ? 'Uloženo' : 'Zapsáno'} ${what}. ${afterLine()}`, before);
 });
+// Smazání bez potvrzovacího okna – jde vrátit z hlášky.
 $('#tx-del').addEventListener('click', () => {
-  if (!txEdit || !confirm('Opravdu smazat tento záznam?')) return;
-  S.tx = S.tx.filter(x => x !== txEdit); save(); $('#d-tx').close(); render(); toast('Smazáno');
+  if (!txEdit) return;
+  const before = snap(), t = txEdit;
+  S.tx = S.tx.filter(x => x !== t); save(); $('#d-tx').close(); render();
+  toast(`Smazáno: ${t.note || catInfo(t.type, t.cat).name} ${money(t.amount)}`, before);
 });
 
 /* ---------- dialog: pravidelná platba ---------- */
@@ -730,16 +858,19 @@ $('#f-rec').addEventListener('submit', e => {
   const d = recFromForm();
   if (!d.name) { toast('Zadej název'); $('#rec-name').focus(); return; }
   if (!(d.amount > 0)) { toast('Zadej částku'); $('#rec-amt').focus(); return; }
+  const before = snap();
   if (recEdit) Object.assign(recEdit, d);
   else {
     const t = today(), marks = recNow === 'yes' ? {[periodKey(d, t)]:'pre'} : {};
     S.rec.push({id:uid(), created:t, last:t, marks, ...d});
   }
-  save(); $('#d-rec').close(); render(); toast('Uloženo');
+  save(); $('#d-rec').close(); render(); toast(`Uloženo: ${d.name}`, before);
 });
 $('#rec-del').addEventListener('click', () => {
-  if (!recEdit || !confirm(`Smazat „${recEdit.name}“? Už zapsané platby v historii zůstanou.`)) return;
-  S.rec = S.rec.filter(r => r !== recEdit); save(); $('#d-rec').close(); render(); toast('Smazáno');
+  if (!recEdit) return;
+  const before = snap(), name = recEdit.name;
+  S.rec = S.rec.filter(r => r !== recEdit); save(); $('#d-rec').close(); render();
+  toast(`Smazáno: ${name}. Zapsané platby v historii zůstaly.`, before);
 });
 
 /* ---------- dialog: zůstatek ---------- */
@@ -768,31 +899,40 @@ $('#f-bal').addEventListener('submit', e => {
   e.preventDefault();
   const v = parseAmt($('#bal-amt').value);
   if (isNaN(v)) { toast('Zadej částku'); return; }
-  const d = balDiff();
+  const d = balDiff(), first = !S.setup, before = snap();
   if (S.setup && d && $('#bal-log').checked) {
     S.tx.push({id:uid(), date:today(), amount:Math.abs(d), type:d < 0 ? 'out' : 'in', cat:'nezapsane',
       note:d < 0 ? 'Nezapsané útraty' : 'Nezapsaný příjem'});
   } else {
-    if (!S.setup) S.setupDate = today();
+    if (first) S.setupDate = today();
     setBalance(v);
   }
-  S.setup = true; save(); $('#d-bal').close(); render(); toast('Zůstatek srovnán s bankou');
+  S.setup = true; save(); $('#d-bal').close(); render();
+  if (first) toast('Zůstatek nastaven. Teď si přidej pravidelné platby a den výplaty.');
+  else toast(d ? `Srovnáno s bankou, rozdíl ${d < 0 ? '−' : '+'}${money(Math.abs(d))}` : 'Zůstatek sedí s bankou', d ? before : undefined);
 });
 
 /* ---------- akce ---------- */
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
 document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
 document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.tab); });
-$('#fab').addEventListener('click', () => tab === 'pravidelne' ? openRec() : openTx());
+// Tlačítko + vždy přidává útratu; pravidelná platba má vlastní tlačítko v záložce Pravidelné.
+$('#fab').addEventListener('click', () => openTx());
+document.querySelectorAll('.x').forEach(b => b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>');
+// Řádky s role="button" ovládá i klávesnice a čtečka obrazovky.
+document.querySelector('main').addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role="button"]')) { e.preventDefault(); e.target.click(); }
+});
 
 document.querySelector('main').addEventListener('click', e => {
   const el = e.target.closest('[data-act],[data-tx],[data-rec],[data-st]');
   if (!el) return;
-  if (el.dataset.st) { const [id, key] = el.dataset.st.split('|'); return toggleStatus(id, key); }
+  if (el.dataset.st) { const [id, key] = el.dataset.st.split('|'); return openState(id, key); }
   if (el.dataset.tx) return openTx(S.tx.find(x => x.id === el.dataset.tx));
   if (el.dataset.rec) return openRec(S.rec.find(r => r.id === el.dataset.rec));
   const a = el.dataset.act;
   if (a === 'bal') openBal(false);
+  else if (a === 'newrec') openRec();
   else if (a === 'mprev' || a === 'mnext') {
     const [y, m] = histMonth.split('-').map(Number), d = new Date(y, m - 1 + (a === 'mnext' ? 1 : -1), 1);
     histMonth = iso(d).slice(0, 7); render();
